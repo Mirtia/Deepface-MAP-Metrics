@@ -3,8 +3,8 @@
 
 ## Choosing and understanding the dataset 
 
-We choose the [FRGC dataset](https://paperswithcode.com/dataset/frgc)([See challenge](https://www.nist.gov/programs-projects/face-recognition-grand-challenge-frgc)
-) as it is more popular according to the number of citations, so more related work to look into.
+We choose the [FRGC dataset](https://paperswithcode.com/dataset/frgc) ([See challenge](https://www.nist.gov/programs-projects/face-recognition-grand-challenge-frgc))
+as it is more popular according to the number of citations, so more related work to look into.
 
 For `bonafide_*`:
 
@@ -38,6 +38,17 @@ M0001	S1	0.2838268129361562	0.3155098670283303	0.27628365453527004	0.28536534857
 ## Choosing the appropriate model + detector combination
 
 - ArcFace+yunet (one of the already used in the MAP literature)
-- Facenet512+retinaface (the one with best performance)
+- Facenet512+retinaface (the one with best performance + state of the art)
 
 The choices were made according to the table found here: [Benchmarks on choice of distance metric, alignment, model and detector](https://github.com/serengil/deepface/tree/master/benchmarks)
+
+## Calculating the treshold scores
+
+To calculate the appropriate thresholds, [pyeer](https://github.com/manuelaguadomtz/pyeer) was used. 
+We wanted the thresholds to satisfy this condition: The False Match Rate must be equal to 0.1%.
+
+This library was also helpful to calculate other scores and plot DET curves.
+
+## Other metrics (compare with MAP)
+
+We calculate MMPMR (Min-Max MMPMR) MMPMR (IAPMR) - RMMR scores to compare with the MAP metric.
