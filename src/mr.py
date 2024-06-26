@@ -15,9 +15,9 @@ class MRCalculator:
         fnmr: float = self.calculate_fnmr()
         rmmr: float = self.calculate_rmmr(mmpmr, fnmr)
         print("MMPMR, FNMR, and RMMR calculated")
-        print(f"MMPMR: {mmpmr}")
-        print(f"FNMR: {fnmr}")
-        print(f"RMMR: {rmmr}")
+        print(f"MMPMR: {mmpmr:.3f}")
+        print(f"FNMR: {fnmr:.3f}")
+        print(f"RMMR: {rmmr:.3f}")
 
     def calculate_mmpmr(self) -> float:
         mated_scores = self.read_scores(self.score_mated_file)
