@@ -51,4 +51,21 @@ This library was also helpful to calculate other scores and plot DET curves.
 
 ## Other metrics (compare with MAP)
 
-We calculate MMPMR (Min-Max MMPMR) MMPMR (IAPMR) - RMMR scores to compare with the MAP metric.
+We calculate MMPMR, RMMR scores to compare with the MAP metric.
+
+
+## How to run
+
+To analyze the databases and calculate the dissimilarity scores as well as the mated and non-mated scores:
+```bash
+python main.py -i ../Input/ -o ../Output -m deepface
+```
+
+To calculate MMPMR, RMMR... scores: 
+```bash
+# For FRS_1 = ArcFace+yunet
+python main.py -g ../Metrics/AY_mated_scores.txt -n ../Metrics/AY_non_mated_scores.txt -t 0.542889 -m mmpmr
+
+# FOR FRS_2 = Facenet512+retinaface
+python main.py -g ../Metrics/FR_mated_scores.txt -n ../Metrics/FR_non_mated_scores.txt -t 0.333671 -m mmpmr
+```
