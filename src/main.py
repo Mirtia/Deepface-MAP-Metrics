@@ -1,11 +1,15 @@
 import argparse
-from pipeline import DeepFacePipeline
 from dataclasses import dataclass
+from pipeline import DeepFacePipeline
 from mr import MRCalculator
 
 
 @dataclass
 class Arguments:
+    """
+    Dataclass to store command-line arguments.
+    """
+
     input: str = None
     output: str = None
     mode: str = None
@@ -15,6 +19,12 @@ class Arguments:
 
 
 def parse() -> Arguments:
+    """
+    Parse command-line arguments.
+
+    Returns:
+        Arguments: An instance of the Arguments dataclass with parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="BiometricPipeline",
         description="Calculates the dissimilarity scores, mated, and non-mated scores for a given database or calculates MMPMR and RMMR",
@@ -37,11 +47,10 @@ def parse() -> Arguments:
         "-m",
         "--mode",
         type=str,
-        help="Mode to run: `deepface` or `mmpmr`",
+        help="Mode to run: 'deepface' or 'mmpmr'",
         required=True,
         choices=["deepface", "mmpmr"],
     )
-
     parser.add_argument(
         "-g",
         "--mated",
@@ -81,6 +90,9 @@ def parse() -> Arguments:
 
 
 def main() -> None:
+    """
+    Main function to execute the pipeline based on the parsed arguments.
+    """
     args: Arguments = parse()
     if args.mode == "deepface":
         if args.input and args.output:
