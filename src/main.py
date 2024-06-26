@@ -1,7 +1,7 @@
 import argparse
 from pipeline import DeepFacePipeline
 from dataclasses import dataclass
-from mr import calculate_scores
+from mr import MRCalculator
 
 
 @dataclass
@@ -68,14 +68,14 @@ def parse() -> Arguments:
 
     print("Log: Parsing arguments...")
     print(
-        f"Log: Input directory: {args.input}\nOutput directory: {args.output}\nMode: {args.mode}\nMated scores file: {args.score_mated}\nNon-mated scores file: {args.score_non_mated}\nThreshold: {args.threshold}"
+        f"Log: Input directory: {args.input}\nOutput directory: {args.output}\nMode: {args.mode}\nMated scores file: {args.mated}\nNon-mated scores file: {args.non_mated}\nThreshold: {args.threshold}"
     )
     return Arguments(
         input=args.input,
         output=args.output,
         mode=args.mode,
-        score_mated=args.score_mated,
-        score_non_mated=args.score_non_mated,
+        score_mated=args.mated,
+        score_non_mated=args.non_mated,
         threshold=args.threshold,
     )
 
