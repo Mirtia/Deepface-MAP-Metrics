@@ -365,3 +365,22 @@ class DeepFacePipeline:
             if analysis_feret and analysis_feret.filtered_out_percentage < 0.6:
                 print("Log: Calculating dissimilarity scores for FERET...")
                 self.dispatcher("calculate_dissimilarity_scores_FERET")
+
+
+        print("Log: Pipeline finished successfully.")
+        # Proceed to computeMAP.py to calculate the MAP metric
+        # Map input should look like this:
+        # Folder that contains
+        # The dissimilarity scores of each FR-Method (Output)
+        # A json file that has the following information:
+        # {
+        #   "FRS_1": [
+        #     THRESHOLD,
+        #     false
+        #   ],
+        #   "FRS_2": [
+        #     THRESHOLD,
+        #     false
+        #   ]}
+        # The thresholds were calculated using the pyeer library
+        # and they follow the FMR1000 condition (See more on README.md)
