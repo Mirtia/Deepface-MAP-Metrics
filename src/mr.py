@@ -13,8 +13,7 @@ class MRCalculator:
         self.threshold = threshold
 
     def call(self) -> None:
-        """_summary_
-        """        
+        """The call function that computes the mmpr, fnmr and rmmr scores"""
         mmpmr: float = self.calculate_mmpmr()
         fnmr: float = self.calculate_fnmr()
         rmmr: float = self.calculate_rmmr(mmpmr, fnmr)

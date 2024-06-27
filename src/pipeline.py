@@ -175,6 +175,7 @@ class DeepFacePipeline:
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         probe_files = os.listdir(bonafide_probes_dir)
 
+        # TODO: It keeps recalculating the valid subjects, which is not nice, maybe I'll add it as a field at the class
         valid_subjects = get_valid_subjects(probe_files, self.MIN_COUNT, database)
 
         results_per_frs = {frs: [] for frs in self.DETECTORS.keys()}
@@ -184,40 +185,42 @@ class DeepFacePipeline:
         for morph_file in morph_files:
             morph_path: Path = morphs_dir / morph_file
             subjects = morph_file.split("_vs_")
-            subject_id1 = subjects[0].split("_")[0].split("d")[0]
-            subject_id2 = subjects[1].split("_")[0].split("d")[0]
+            subject_id_1 = subjects[0].split("_")[0].split("d")[0]
+            subject_id_2 = subjects[1].split("_")[0].split("d")[0]
 
-            if not (subject_id2 and subject_id2 in valid_subjects):
+            # Iterates over all morph files
+            # So we have to check if the subject IDs are valid
+            if not (subject_id_2 and subject_id_2 in valid_subjects):
                 print(f"Log: Skipping {morph_file} due to insufficient probe images.")
                 continue
 
             print(
-                f"Log: Processing morph: {morph_file} for subjects: {subject_id1}, {subject_id2}"
+                f"Log: Processing morph: {morph_file} for subjects: {subject_id_1}, {subject_id_2}"
             )
 
             morph_id = f"M{morph_id_counter:04d}"
             morph_id_counter += 1
 
-            for subject_label, subject_id in [("S1", subject_id1), ("S2", subject_id2)]:
-                if not subject_id:
-                    continue
-
+            for subject_label, subject_id in [
+                ("S1", subject_id_1),
+                ("S2", subject_id_2),
+            ]:
                 probe_paths = find_corresponding_probes(
                     subject_id, probe_files, bonafide_probes_dir
                 )
 
                 if not probe_paths:
-                    print(
+                    # This code should never be reached
+                    raise ValueError(
                         f"Error: No corresponding probes found for {morph_file} ({subject_label})."
                     )
-                    continue
 
-                print(f"Log: Processing probes: {probe_paths} for {subject_label}")
+                # print(f"Log: Processing probes: {probe_paths} for {subject_label}")
 
-                scores_per_frs_for_subject = {frs: [] for frs in self.DETECTORS.keys()}
+                scores_per_frs = {frs: [] for frs in self.DETECTORS.keys()}
 
                 for probe_path in probe_paths:
-                    print("Log: Processing probe: ", probe_path)
+                    # print("Log: Processing probe: ", probe_path)
                     for frs, (model, detector) in tqdm(
                         self.DETECTORS.items(),
                         desc=f"Processing detectors for {subject_label}",
@@ -237,35 +240,37 @@ class DeepFacePipeline:
                             save_embeddings(
                                 probe_path, model, detector, probe_embeddings_file
                             )
-                        else:
-                            print(f"Log: Embeddings already saved for {probe_path}")
+                        # else:
+                        # print(f"Log: Embeddings already saved for {probe_path}")
                         if not morph_embeddings_file.exists():
                             save_embeddings(
                                 morph_path, model, detector, morph_embeddings_file
                             )
-                        else:
-                            print(f"Log: Embeddings already saved for {morph_path}")
+                        # else:
+                        # print(f"Log: Embeddings already saved for {morph_path}")
 
                         probe_embeddings = load_embeddings(probe_embeddings_file)
                         morph_embeddings = load_embeddings(morph_embeddings_file)
 
                         score = cosine(probe_embeddings, morph_embeddings)
+                        # .6 precision
                         print(f"{frs} - {morph_file} ({subject_label}): {score:.6f}")
 
-                        scores_per_frs_for_subject[frs].append(score)
+                        scores_per_frs[frs].append(score)
 
-                for frs, scores in scores_per_frs_for_subject.items():
+                for frs, scores in scores_per_frs.items():
                     # Format the scores
                     formatted_scores = f"{morph_id}\t{subject_label}\t" + "\t".join(
                         f"{score:.6f}" for score in scores
                     )
+                    # Two lists, one for each FRS
                     results_per_frs[frs].append(formatted_scores)
 
                 for frs, results in results_per_frs.items():
                     output_file = self.output_dir / f".txt"
                     with output_file.open("w") as df:
                         print("Log: Writing results to ", output_file)
-                        print(f"Log: Number of results for {frs}: ", len(results))
+                        # print(f"Log: Number of results for {frs}: ", len(results))
                         for result in results:
                             df.write(result + "\n")
                         print(f"Log: Dissimilarity scores saved to {output_file}")
@@ -313,7 +318,7 @@ class DeepFacePipeline:
 
             for reference_path in reference_paths:
                 for probe_path in probe_paths:
-                    # tqdm is kind of not necessary here, but I like progress bars
+                    # tqdm is kind of unnecessary here, but I like progress bars
                     for frs, (model, detector) in tqdm(
                         self.DETECTORS.items(),
                         desc=f"Processing detectors for {subject_id}",
@@ -347,9 +352,9 @@ class DeepFacePipeline:
                         )
                         probe_embeddings = load_embeddings(probe_embeddings_file)
 
-                        # We calculate the cosine similarity between the embeddings (TODO: check alignment)
+                        # We calculate the cosine similarity between the embeddings (TODO: See alignment)
                         score = cosine(reference_embeddings, probe_embeddings)
-                        print(f"{frs} - {subject_id}: {score:.6f}")
+                        # print(f"{frs} - {subject_id}: {score:.6f}")
 
                         results_per_frs[frs].append(f"{subject_id}\t{score:.6f}")
 
@@ -431,10 +436,11 @@ class DeepFacePipeline:
                             probe_embeddings = load_embeddings(probe_embeddings_file)
 
                             score = cosine(reference_embeddings, probe_embeddings)
-                            print(
-                                f"{frs} - {probe_subject_id} vs {reference_subject_id}: {score:.6f}"
-                            )
-
+                            # print(
+                            #     f"{frs} - {probe_subject_id} vs {reference_subject_id}: {score:.6f}"
+                            # )
+                            # To use pyeer afterwards, we can awk the last column (for me it did not work to just have the file with multiple input columns)
+                            # The subject ids are here for sanity check, same for the mated scores
                             results_per_frs[frs].append(
                                 f"{probe_subject_id}\t{reference_subject_id}\t{score:.6f}"
                             )

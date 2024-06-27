@@ -6,12 +6,12 @@ from typing import Dict, List
 class Embeddings:
     """Dataclass to store the embeddings of an image"""
 
-    uid: str
+    ID: str
     embeddings: Dict[str, List[float]]
 
     def __str__(self):
         """String representation of Embeddings"""
-        return f"UID: {self.uid}\nEmbeddings: {self.embeddings}\n"
+        return f"ID: {self.ID}\nEmbeddings: {self.embeddings}\n"
 
 
 def save_embeddings(
