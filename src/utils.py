@@ -1,8 +1,7 @@
-import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from scipy.spatial.distance import cosine
-from deepface import DeepFace
+import os
 
 
 def calculate_cosine_similarity(
@@ -72,3 +71,18 @@ def get_valid_subjects(probe_files: List[str], min_count: int, database: str) ->
         if (count >= min_count)
     }
     return valid_subjects
+
+
+def find_corresponding_files(subject_id: str, files: List, dir: Path) -> List:
+    """Finds the corresponding files for a given subject ID in the given directory,
+    concats path with the file name for each entry in the list
+
+    Args:
+        subject_id (str): The subject ID
+        files (List): The list of files
+        dir (Path): The directory path
+
+    Returns:
+        List: The corresponding files for a given subject ID in the given directory
+    """
+    return [os.path.join(dir, file) for file in files if subject_id in file]

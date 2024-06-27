@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, List
+from pathlib import Path
+import json
+from deepface import DeepFace
 
 
 @dataclass
@@ -20,9 +23,9 @@ def save_embeddings(
     """Save embeddings to file
 
     Args:
-        image_path (Path): image path
-        model (str): model used to extract embeddings
-        detector (str): backend used for detection
+        image_path (Path): The image path
+        model (str): The model used to extract embeddings
+        detector (str): The backend used for detection
         output_file (Path): The output file to save the embeddings
     """
     # We use deepface to calculate the embeddings

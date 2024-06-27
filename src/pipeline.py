@@ -2,11 +2,11 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 from analysis_result import AnalysisResult
+from embeddings import save_embeddings, load_embeddings
 from utils import (
-    save_embeddings,
-    load_embeddings,
     find_corresponding_probes,
     get_valid_subjects,
+    find_corresponding_files,
 )
 from scipy.spatial.distance import cosine
 from tqdm import tqdm
@@ -19,10 +19,10 @@ class DeepFacePipeline:
         "Facenet512+retinaface": ("Facenet512", "retinaface"),
     }
     # Minimum number of probe images per unique subject
-    MIN_COUNT: int = 3
+    MIN_COUNT = 3
 
     def __init__(self, input_dir: str, output_dir: str):
-        """_summary_
+        """Constructor for the DeepFacePipeline class
 
         Args:
             input_dir (str): The root directory of the input databases, see README.md for detailed structure
@@ -100,22 +100,21 @@ class DeepFacePipeline:
             )
 
         print("Log: Analyzing {database}...")
-
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         print(f"Log: Reading probe images from {bonafide_probes_dir} ...")
         bonafide_probes_list = os.listdir(bonafide_probes_dir)
 
         counts = self._get_counts(
-            delimiter=bonafide_probes_list, delimiter="_", id_length=None
+            file_list=bonafide_probes_list, delimiter="_", id_length=5
         )
         counts_len = len(counts)
-        print("Log: # Unique identifiers (before filtering): ", counts_len)
+        print(f"Log: # Unique identifiers (before filtering): {counts_len}")
 
         filtered_counts = {
-            key: value for key, value in counts.items() if (v >= self.MIN_COUNT)
+            key: value for key, value in counts.items() if (value >= self.MIN_COUNT)
         }
         filtered_counts_len = len(filtered_counts)
-        print("Log: # Unique identifiers (after filtering): ", filtered_counts_len)
+        print(f"Log: # Unique identifiers (after filtering): {filtered_counts_len}")
 
         filtered_out_percentage = round(
             (counts_len - filtered_counts_len) / counts_len, 2
@@ -131,26 +130,16 @@ class DeepFacePipeline:
             filtered_out_percentage=filtered_out_percentage,
         )
 
-    def _find_corresponding_files(subject_id: str, files: List, dir: Path) -> List:
-        """Finds the corresponding files for a given subject ID in the given directory,
-        concats path with the file name for each entry in the list
-
-        Args:
-            subject_id (str): subject ID
-            files (List): list of files
-            dir (Path): the directory path
-
-        Returns:
-            List: The corresponding files for a given subject ID in the given directory
-        """
-        return [os.path.join(dir, file) for file in files if subject_id in file]
-
     def calculate_dissimilarity_scores(self, database: str) -> None:
         """Calculates the dissimilarity scores for the FRGC or FERET databases
 
         Args:
             database (str): The database name ("FRGC" or "FERET")
         """
+        if database != "FERET" and database != "FRGC":
+            raise ValueError(
+                "Error: Please specify a valid database ('FRGC' or 'FERET')."
+            )
         # The nested morph directories for both cases
         morph_dirs = [
             "morphs_facefusion",
@@ -175,7 +164,7 @@ class DeepFacePipeline:
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         probe_files = os.listdir(bonafide_probes_dir)
 
-        # TODO: It keeps recalculating the valid subjects, which is not nice, maybe I'll add it as a field at the class
+        # TODO: I keep recalculating the valid subjects, which is not nice, maybe I'll add it as a field at the class, future improvement
         valid_subjects = get_valid_subjects(probe_files, self.MIN_COUNT, database)
 
         results_per_frs = {frs: [] for frs in self.DETECTORS.keys()}
@@ -183,17 +172,16 @@ class DeepFacePipeline:
         morph_id_counter = 1
 
         for morph_file in morph_files:
+            # The full path of the morph file
             morph_path: Path = morphs_dir / morph_file
             subjects = morph_file.split("_vs_")
             subject_id_1 = subjects[0].split("_")[0].split("d")[0]
             subject_id_2 = subjects[1].split("_")[0].split("d")[0]
-
             # Iterates over all morph files
-            # So we have to check if the subject IDs are valid
-            if not (subject_id_1 and subject_id_2 in valid_subjects):
+            # So we have to check if the subject IDs belong to the valid
+            if not subject_id_1 in valid_subjects or not subject_id_2 in valid_subjects:
                 print(f"Log: Skipping {morph_file}, not valid subjects.")
                 continue
-
             print(
                 f"Log: Processing morph: {morph_file} for subjects: {subject_id_1}, {subject_id_2}"
             )
@@ -205,15 +193,10 @@ class DeepFacePipeline:
                 ("S1", subject_id_1),
                 ("S2", subject_id_2),
             ]:
+
                 probe_paths = find_corresponding_probes(
                     subject_id, probe_files, bonafide_probes_dir
                 )
-
-                if not probe_paths:
-                    # This code should never be reached
-                    raise ValueError(
-                        f"Error: No corresponding probes found for {morph_file} ({subject_label})."
-                    )
 
                 # print(f"Log: Processing probes: {probe_paths} for {subject_label}")
 
@@ -223,7 +206,7 @@ class DeepFacePipeline:
                     # print("Log: Processing probe: ", probe_path)
                     for frs, (model, detector) in tqdm(
                         self.DETECTORS.items(),
-                        desc=f"Processing detectors for {subject_label}",
+                        desc=f"Log: Processing detectors for {subject_label}",
                         total=len(self.DETECTORS),
                     ):
                         # Save embeddings for probe and morph images if not already saved
@@ -267,10 +250,11 @@ class DeepFacePipeline:
                     results_per_frs[frs].append(formatted_scores)
 
                 for frs, results in results_per_frs.items():
-                    output_file = self.output_dir / f".txt"
+                    output_file = (
+                        self.output_dir / f"{database}_{frs}_dissimilarity_scores.txt"
+                    )
                     with output_file.open("w") as df:
-                        print("Log: Writing results to ", output_file)
-                        # print(f"Log: Number of results for {frs}: ", len(results))
+                        print(f"Log: Writing results to ", output_file)
                         for result in results:
                             df.write(result + "\n")
                         print(f"Log: Dissimilarity scores saved to {output_file}")
@@ -279,7 +263,7 @@ class DeepFacePipeline:
         """Calculates the mated scores for the database
 
         Args:
-            database (str): the name of the database
+            database (str): The name of the database
 
         """
         print(f"Log: Calculating mated scores for {database}...")
@@ -296,9 +280,6 @@ class DeepFacePipeline:
         # Initialize results per FRS
         results_per_frs = {frs: [] for frs in self.DETECTORS.keys()}
 
-        def find_corresponding_files(subject_id, files, dir):
-            return [os.path.join(dir, file) for file in files if subject_id in file]
-
         # For each valid subject ID (The reason I kept filtering again and again
         # was because I didn't want to have a separate directory with the valid subjects)
         for subject_id in valid_subjects:
@@ -310,8 +291,8 @@ class DeepFacePipeline:
                 subject_id, probe_files, bonafide_probes_dir
             )
 
-            # This should not happen if the subject is valid
             if not probe_paths or not reference_paths:
+                # This code should never be reached
                 raise ValueError(
                     f"Error: No probe or reference paths found for {subject_id}"
                 )
@@ -321,7 +302,7 @@ class DeepFacePipeline:
                     # tqdm is kind of unnecessary here, but I like progress bars
                     for frs, (model, detector) in tqdm(
                         self.DETECTORS.items(),
-                        desc=f"Processing detectors for {subject_id}",
+                        desc=f"Log: Processing detectors for {subject_id}",
                         total=len(self.DETECTORS),
                     ):
                         reference_embeddings_file = (
@@ -361,7 +342,7 @@ class DeepFacePipeline:
         for frs, results in results_per_frs.items():
             output_file = self.output_dir / f"FRGC_{frs}_mated_scores.txt"
             with output_file.open("w") as df:
-                print("Log: Writing results to ", output_file)
+                print(f"Log: Writing results to ", output_file)
                 print(f"Log: Number of results for {frs}: ", len(results))
                 for result in results:
                     df.write(result + "\n")
@@ -371,9 +352,9 @@ class DeepFacePipeline:
         """Calculates the non-mated scores for the database
 
         Args:
-            database (str): the name of the database
+            database (str): The name of the database
         """
-        print("Log: Calculating non-mated scores for {database}...")
+        print(f"Log: Calculating non-mated scores for {database}...")
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         bonafide_reference_dir = self._get_subdir(database, "bonafide_reference")
 
@@ -406,7 +387,7 @@ class DeepFacePipeline:
                     for probe_path in probe_paths:
                         for frs, (model, detector) in tqdm(
                             self.DETECTORS.items(),
-                            desc=f"Processing detectors for {probe_subject_id} vs {reference_subject_id}",
+                            desc=f"Log: Processing detectors for {probe_subject_id} vs {reference_subject_id}",
                             total=len(self.DETECTORS),
                         ):
                             reference_embeddings_file = (
@@ -425,10 +406,16 @@ class DeepFacePipeline:
                                     detector,
                                     reference_embeddings_file,
                                 )
+                            # else:
+                            #     print(
+                            #         f"Log: Embeddings already saved for {reference_path}"
+                            #     )
                             if not probe_embeddings_file.exists():
                                 save_embeddings(
                                     probe_path, model, detector, probe_embeddings_file
                                 )
+                            # else:
+                            #     print(f"Log: Embeddings already saved for {probe_path}")
 
                             reference_embeddings = load_embeddings(
                                 reference_embeddings_file
@@ -448,7 +435,7 @@ class DeepFacePipeline:
         for frs, results in results_per_frs.items():
             output_file = self.output_dir / f"{database}_{frs}_non_mated_scores.txt"
             with output_file.open("w") as df:
-                print("Log: Writing results to ", output_file)
+                print(f"Log: Writing results to ", output_file)
                 print(f"Log: Number of results for {frs}: ", len(results))
                 for result in results:
                     df.write(result + "\n")
@@ -463,9 +450,9 @@ class DeepFacePipeline:
         """Gets the counts of unique identifiers in the file list (counts per subject ID)
 
         Args:
-            file_list (List[str]): the list of files
-            delimiter (str): the delimeter to help get the ID
-            id_length (int): the expected length of the ID
+            file_list (List[str]): The list of files
+            delimiter (str): The delimeter to help get the ID
+            id_length (int): The expected length of the ID
 
         Returns:
             Dict[str, int]: A dictionary with the counts of unique identifiers (ID: count)
@@ -485,8 +472,8 @@ class DeepFacePipeline:
             analysis_frgc: AnalysisResult = self.analyze("FRGC")
             if analysis_frgc and analysis_frgc.filtered_out_percentage < 0.6:
                 self.calculate_dissimilarity_scores("FRGC")
-                self.calculate_mated_scores("FRGC")
-                self.calculate_non_mated_scores("FRGC")
+                # self.calculate_mated_scores("FRGC")
+                # self.calculate_non_mated_scores("FRGC")
         # FERET is not suited in our case since our analysis showed that there are not
         # enough probe images to calculate the MAP metric
         # Easily expand in case of more databases
