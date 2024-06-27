@@ -190,8 +190,8 @@ class DeepFacePipeline:
 
             # Iterates over all morph files
             # So we have to check if the subject IDs are valid
-            if not (subject_id_2 and subject_id_2 in valid_subjects):
-                print(f"Log: Skipping {morph_file} due to insufficient probe images.")
+            if not (subject_id_1 and subject_id_2 in valid_subjects):
+                print(f"Log: Skipping {morph_file}, not valid subjects.")
                 continue
 
             print(
