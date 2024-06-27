@@ -189,7 +189,7 @@ class DeepFacePipeline:
 
             if not (subject_id2 and subject_id2 in valid_subjects):
                 print(
-                    f"Log: Skipping {morph_file} due to insufficient probe images for {subject_id2}."
+                    f"Log: Skipping {morph_file} due to insufficient probe images."
                 )
                 continue
 
