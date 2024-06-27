@@ -13,17 +13,6 @@ from tqdm import tqdm
 
 
 class DeepFacePipeline:
-    """
-    DeepFacePipeline class for managing face recognition processes such as analysis and dissimilarity score calculation.
-
-    Attributes:
-        DETECTORS (Dict[str, str]): A dictionary mapping detector names to tuples containing model and detector names.
-        MIN_COUNT (int): Minimum count of probe images required for a valid subject.
-        input_dir (Path): Input directory containing the datasets.
-        databases (List[str]): List of available databases in the input directory.
-        output_dir (Path): Output directory for saving results.
-    """
-
     DETECTORS: Dict[str, str] = {
         "ArcFace+yunet": ("ArcFace", "yunet"),
         "Facenet512+retinaface": ("Facenet512", "retinaface"),
@@ -31,13 +20,6 @@ class DeepFacePipeline:
     MIN_COUNT: int = 3
 
     def __init__(self, input_dir: str, output_dir: str):
-        """
-        Initializes the DeepFacePipeline with the given input and output directories.
-
-        Args:
-            input_dir (str): Input directory containing the datasets.
-            output_dir (str): Output directory for saving results.
-        """
         self.input_dir = Path(input_dir)
         self.databases = os.listdir(input_dir)
         if "FERET" not in self.databases and "FRGC" not in self.databases:
@@ -51,19 +33,6 @@ class DeepFacePipeline:
             self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def get_subdir(self, database: str, suffix: str) -> Path:
-        """
-        Gets the subdirectory for a given database and suffix.
-
-        Args:
-            database (str): The database name.
-            suffix (str): The subdirectory suffix.
-
-        Returns:
-            Path: The path to the subdirectory.
-
-        Raises:
-            ValueError: If the subdirectory does not exist.
-        """
         nested_dir: Path = self.input_dir / database / suffix
         if not nested_dir.exists():
             raise ValueError(
@@ -72,24 +41,20 @@ class DeepFacePipeline:
         return nested_dir
 
     def _analyze_FRGC(self) -> AnalysisResult:
-        """
-        Analyzes the FRGC database for valid probe images.
-
-        Returns:
-            AnalysisResult: The result of the analysis containing statistics about the database.
-        """
         print("Log: Organizing files for FRGC...")
         bonafide_probes_dir = self.get_subdir("FRGC", "bonafide_probe")
         print(f"Log: Reading probe images from {bonafide_probes_dir} ...")
         bonafide_probes_list = os.listdir(bonafide_probes_dir)
 
         counts = self._get_counts(
-            bonafide_probes_list, delimiter=".", identifier_length=5
+            file_list=bonafide_probes_list, delimiter=".", identifier_length=5
         )
         counts_len: int = len(counts)
         print("Log: # Unique identifiers (before filtering): ", counts_len)
 
-        filtered_counts = {k: v for k, v in counts.items() if v >= self.MIN_COUNT}
+        filtered_counts = {
+            key: value for key, value in counts.items() if value >= self.MIN_COUNT
+        }
         filtered_counts_len: int = len(filtered_counts)
         print("Log: # Unique identifiers (after filtering): ", filtered_counts_len)
 
@@ -108,19 +73,13 @@ class DeepFacePipeline:
         )
 
     def _analyze_FERET(self) -> AnalysisResult:
-        """
-        Analyzes the FERET database for valid probe images.
-
-        Returns:
-            AnalysisResult: The result of the analysis containing statistics about the database.
-        """
         print("Log: Organizing files for FERET...")
         bonafide_probes_dir = self.get_subdir("FERET", "bonafide_probe")
         print(f"Log: Reading probe images from {bonafide_probes_dir} ...")
         bonafide_probes_list = os.listdir(bonafide_probes_dir)
 
         counts = self._get_counts(
-            bonafide_probes_list, delimiter="_", identifier_length=None
+            delimiter=bonafide_probes_list, delimiter="_", identifier_length=None
         )
         counts_len = len(counts)
         print("Log: # Unique identifiers (before filtering): ", counts_len)
@@ -144,18 +103,6 @@ class DeepFacePipeline:
         )
 
     def analyze(self, database: str) -> AnalysisResult:
-        """
-        Analyzes the specified database.
-
-        Args:
-            database (str): The database to analyze.
-
-        Returns:
-            AnalysisResult: The result of the analysis.
-
-        Raises:
-            ValueError: If an invalid database is specified.
-        """
         if database == "FRGC":
             return self._analyze_FRGC()
         elif database == "FERET":
@@ -166,9 +113,6 @@ class DeepFacePipeline:
             )
 
     def _calculate_dissimilarity_scores_FRGC(self) -> None:
-        """
-        Calculates dissimilarity scores for the FRGC database.
-        """
         print("Log: Calculating dissimilarity scores for FRGC...")
         morph_dirs = [
             "morphs_facefusion",
@@ -182,18 +126,9 @@ class DeepFacePipeline:
             self.calculate_dissimilarity_scores(morph_path, "FRGC")
 
     def _calculate_dissimilarity_scores_FERET(self) -> None:
-        """
-        Calculates dissimilarity scores for the FERET database.
-
-        Raises:
-            NotImplementedError: As FERET is not currently supported.
-        """
         raise NotImplementedError
 
     def _calculate_mated_scores_FRGC(self) -> None:
-        """
-        Calculates mated scores for the FRGC database.
-        """
         print("Log: Calculating mated scores for FRGC...")
         bonafide_probes_dir = self.get_subdir("FRGC", "bonafide_probe")
         bonafide_reference_dir = self.get_subdir("FRGC", "bonafide_reference")
@@ -214,7 +149,8 @@ class DeepFacePipeline:
         def find_corresponding_files(subject_id, files, dir):
             return [os.path.join(dir, file) for file in files if subject_id in file]
 
-        # For each valid subject ID
+        # For each valid subject ID (The reason I kept filtering again and again
+        # was because I didn't want to have a separate directory with the valid subjects)
         for subject_id in valid_subjects:
             # Find all the reference paths and probe paths for the subject
             reference_paths = find_corresponding_files(
@@ -276,9 +212,6 @@ class DeepFacePipeline:
                 print(f"Log: Mated scores saved to {output_file}")
 
     def _calculate_non_mated_scores_FRGC(self) -> None:
-        """
-        Calculates non-mated scores for the FRGC database.
-        """
         print("Log: Calculating non-mated scores for FRGC...")
         bonafide_probes_dir = self.get_subdir("FRGC", "bonafide_probe")
         bonafide_reference_dir = self.get_subdir("FRGC", "bonafide_reference")
@@ -368,17 +301,6 @@ class DeepFacePipeline:
                 print(f"Log: Non-mated scores saved to {output_file}")
 
     def dispatcher(self, command: str, *args: Any, **kwargs: Any) -> Any:
-        """
-        Dispatches the specified command to the corresponding method.
-
-        Args:
-            command (str): The command to execute.
-            *args (Any): Positional arguments to pass to the command method.
-            **kwargs (Any): Keyword arguments to pass to the command method.
-
-        Returns:
-            Any: The result of the executed command.
-        """
         commands: dict = {
             "analyze_FRGC": self._analyze_FRGC,
             "analyze_FERET": self._analyze_FERET,
@@ -407,17 +329,6 @@ class DeepFacePipeline:
         delimiter: str,
         identifier_length: int,
     ) -> Dict[str, int]:
-        """
-        Gets the counts of unique identifiers in the file list.
-
-        Args:
-            file_list (List[str]): List of file names.
-            delimiter (str): Delimiter to use for splitting the file names.
-            identifier_length (int): Length of the identifier.
-
-        Returns:
-            Dict[str, int]: Dictionary with unique identifiers and their counts.
-        """
         counts = {}
         for file in file_list:
             unique_identifier: str = file.split(delimiter)[0][:identifier_length]
@@ -428,9 +339,6 @@ class DeepFacePipeline:
         return counts
 
     def call(self) -> None:
-        """
-        Main entry point for executing the pipeline.
-        """
         if "FRGC" in self.databases:
             analysis_frgc: AnalysisResult = self.dispatcher("analyze", "FRGC")
             if analysis_frgc and analysis_frgc.filtered_out_percentage < 0.6:
