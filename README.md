@@ -64,10 +64,10 @@ python main.py -i ../Input/ -o ../Output -m deepface
 To calculate MMPMR, RMMR... scores: 
 ```bash
 # For FRS_1 = ArcFace+yunet
-python main.py -g ../Metrics/AY_mated_scores.txt -n ../Metrics/AY_non_mated_scores.txt -t 0.542889 -m mmpmr
+python main.py -g ../Metrics/AY_mated_scores.txt -n ../Metrics/AY_non_mated_scores.txt -t 0.542889 -m mr
 
 # FOR FRS_2 = Facenet512+retinaface
-python main.py -g ../Metrics/FR_mated_scores.txt -n ../Metrics/FR_non_mated_scores.txt -t 0.333671 -m mmpmr
+python main.py -g ../Metrics/FR_mated_scores.txt -n ../Metrics/FR_non_mated_scores.txt -t 0.333671 -m mr
 ```
 
 ## Installing requirements

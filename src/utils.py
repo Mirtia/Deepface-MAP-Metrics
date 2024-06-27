@@ -4,34 +4,19 @@ from typing import List, Optional, Dict, Any
 from scipy.spatial.distance import cosine
 from deepface import DeepFace
 
-
-def save_embeddings(
-    image_path: Path, model: str, detector: str, output_file: Path
-) -> None:
-    embeddings = DeepFace.represent(
-        img_path=str(image_path),
-        model_name=model,
-        detector_backend=detector,
-        enforce_detection=False,
-        align=True,
-    )[0]["embedding"]
-    with output_file.open("w") as f:
-        json.dump(embeddings, f)
-    print(
-        f"Log: Saved embeddings for {image_path} using {model}+{detector} to {output_file}"
-    )
-
-
-def load_embeddings(embeddings_file: Path) -> List[float]:
-    with embeddings_file.open("r") as f:
-        embeddings = json.load(f)
-    return embeddings
-
-
 def calculate_cosine_similarity(
-    embeddings1: List[float], embeddings2: List[float]
+    embeddings_1: List[float], embeddings_2: List[float]
 ) -> float:
-    return cosine(embeddings1, embeddings2)
+    """Calculates the cosine similarity between two given embeddings
+
+    Args:
+        embeddings_1 (List[float]): The first embeddings
+        embeddings_2 (List[float]): The second embeddings
+
+    Returns:
+        float: The cosine similarity between the two embeddings
+    """
+    return cosine(embeddings_1, embeddings_2)
 
 
 def find_corresponding_probes(
