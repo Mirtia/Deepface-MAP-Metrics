@@ -150,7 +150,7 @@ class DeepFacePipeline:
 
         Args:
             database (str): The database name ("FRGC" or "FERET")
-        """        
+        """
         # The nested morph directories for both cases
         morph_dirs = [
             "morphs_facefusion",
@@ -170,9 +170,9 @@ class DeepFacePipeline:
             morphs_dir (Path): The directory containing morph images.
             database (str): The name of the database ("FRGC" or "FERET").
         """
-
+        print(f"Log: Calculating dissimilarity scores for {database}...")
         morph_files = os.listdir(morphs_dir)
-        bonafide_probes_dir = self.get_subdir(database, "bonafide_probe")
+        bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         probe_files = os.listdir(bonafide_probes_dir)
 
         valid_subjects = get_valid_subjects(probe_files, self.MIN_COUNT, database)
@@ -188,9 +188,7 @@ class DeepFacePipeline:
             subject_id2 = subjects[1].split("_")[0].split("d")[0]
 
             if not (subject_id2 and subject_id2 in valid_subjects):
-                print(
-                    f"Log: Skipping {morph_file} due to insufficient probe images."
-                )
+                print(f"Log: Skipping {morph_file} due to insufficient probe images.")
                 continue
 
             print(
@@ -257,12 +255,28 @@ class DeepFacePipeline:
                         scores_per_frs_for_subject[frs].append(score)
 
                 for frs, scores in scores_per_frs_for_subject.items():
+                    # Format the scores
                     formatted_scores = f"{morph_id}\t{subject_label}\t" + "\t".join(
                         f"{score:.6f}" for score in scores
                     )
                     results_per_frs[frs].append(formatted_scores)
 
+                for frs, results in results_per_frs.items():
+                    output_file = self.output_dir / f".txt"
+                    with output_file.open("w") as df:
+                        print("Log: Writing results to ", output_file)
+                        print(f"Log: Number of results for {frs}: ", len(results))
+                        for result in results:
+                            df.write(result + "\n")
+                        print(f"Log: Dissimilarity scores saved to {output_file}")
+
     def calculate_mated_scores(self, database: str) -> None:
+        """Calculates the mated scores for the database
+
+        Args:
+            database (str): the name of the database
+
+        """
         print(f"Log: Calculating mated scores for {database}...")
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         bonafide_reference_dir = self._get_subdir(database, "bonafide_reference")
@@ -349,6 +363,11 @@ class DeepFacePipeline:
                 print(f"Log: Mated scores saved to {output_file}")
 
     def calculate_non_mated_scores(self, database: str) -> None:
+        """Calculates the non-mated scores for the database
+
+        Args:
+            database (str): the name of the database
+        """
         print("Log: Calculating non-mated scores for {database}...")
         bonafide_probes_dir = self._get_subdir(database, "bonafide_probe")
         bonafide_reference_dir = self._get_subdir(database, "bonafide_reference")
@@ -435,6 +454,16 @@ class DeepFacePipeline:
         delimiter: str,
         id_length: int,
     ) -> Dict[str, int]:
+        """Gets the counts of unique identifiers in the file list (counts per subject ID)
+
+        Args:
+            file_list (List[str]): the list of files
+            delimiter (str): the delimeter to help get the ID
+            id_length (int): the expected length of the ID
+
+        Returns:
+            Dict[str, int]: A dictionary with the counts of unique identifiers (ID: count)
+        """
         counts = {}
         for file in file_list:
             unique_identifier: str = file.split(delimiter)[0][:id_length]
@@ -445,15 +474,13 @@ class DeepFacePipeline:
         return counts
 
     def call(self) -> None:
+        """The call function that runs the complete pipeline"""
         if "FRGC" in self.databases:
             analysis_frgc: AnalysisResult = self.analyze("FRGC")
             if analysis_frgc and analysis_frgc.filtered_out_percentage < 0.6:
-                print("Log: Calculating dissimilarity scores for FRGC...")
                 self.calculate_dissimilarity_scores("FRGC")
-                print("Log: Calculating mated scores for FRGC...")
                 self.calculate_mated_scores("FRGC")
-                print("Log: Calculating non-mated scores for FRGC...")
-                self._calculate_non_mated_scores("FRGC")
+                self.calculate_non_mated_scores("FRGC")
         # FERET is not suited in our case since our analysis showed that there are not
         # enough probe images to calculate the MAP metric
         # Easily expand in case of more databases
@@ -461,7 +488,6 @@ class DeepFacePipeline:
             analysis_feret: AnalysisResult = self.analyze("FERET")
             if analysis_feret and analysis_feret.filtered_out_percentage < 0.6:
                 # This is unreachable code at MIN_COUNT = 3
-                print("Log: Calculating dissimilarity scores for FERET...")
                 self.calculate_dissimilarity_scores("FERET")
 
         print("Log: Pipeline finished...")
