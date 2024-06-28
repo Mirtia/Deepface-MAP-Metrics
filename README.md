@@ -1,10 +1,12 @@
 # 02338 Biometric Systems Course
 
 
-## Choosing and understanding the dataset 
+## Choosing the dataset
 
 We choose the [FRGC dataset](https://paperswithcode.com/dataset/frgc) ([See challenge](https://www.nist.gov/programs-projects/face-recognition-grand-challenge-frgc))
 as it is more popular according to the number of citations, so more related work to look into.
+
+## Understanding the dataset format
 
 For `bonafide_*`:
 
@@ -53,25 +55,69 @@ This library was also helpful to calculate other scores and plot DET curves.
 
 We calculate MMPMR, RMMR scores to compare with the MAP metric.
 
-
 ## How to run
 
-To analyze the databases and calculate the dissimilarity scores as well as the mated and non-mated scores:
+The instructions are provided for experiment reproducability.
+
+The Input files are not provided for privacy reasons.
+
+The root `Input` folder structure should look like this:
+
 ```bash
-python main.py -i ../Input/ -o ../Output -m deepface
+Input
+├── Database
+│   ├── bonafide_probe
+│   ├── bonafide_reference
+│   ├── morphs_facefusion
+│   ├── morphs_facemorpher
+│   ├── morphs_opencv
+│   └── morphs_ubo
 ```
 
-To calculate MMPMR, RMMR... scores: 
-```bash
-# For FRS_1 = ArcFace+yunet
-python main.py -g ../Metrics/AY_mated_scores.txt -n ../Metrics/AY_non_mated_scores.txt -t 0.542889 -m mr
-
-# FOR FRS_2 = Facenet512+retinaface
-python main.py -g ../Metrics/FR_mated_scores.txt -n ../Metrics/FR_non_mated_scores.txt -t 0.333671 -m mr
-```
-
-## Installing requirements
+Create a python environment using `miniconda` or your python environment manager of your choice.
+Install requirements (if you have pip):
 
 ```bash
 pip install -r requirements.txt
+```
+
+To analyze the databases and calculate the dissimilarity scores as well as the mated and non-mated scores:
+
+```bash
+python src/main.py -i Input/ -o Output -m deepface
+```
+
+Next, to calculate the metrics from the mated and non-mated files, install `pyeer`:
+
+```bash
+pip install pyeer
+```
+
+The score files were cleaned:
+
+```bash
+cat FRGC_ArcFace+yunet_mated_scores.txt | awk '{print $2}' > AY_mated_scores.txt
+cat FRGC_Facenet512+retinaface_mated_scores.txt | awk '{print $2}' > FR_mated_scores.txt
+cat FRGC_ArcFace+yunet_non_mated_scores.txt | awk '{print $3}' > AY_non_mated_scores.txt
+cat FRGC_Facenet512+retinaface_non_mated_scores.txt | awk '{print $3}' > FR_non_mated_scores.txt
+```
+
+Then, run pyeer!  Do not forget `-ds` for dissimilarity scores. Pyeer can run at the original files as well, as it only considers the last column for scores.
+
+```bash
+geteerinf -p . -g AY_mated_scores.txt -i AY_non_mated_scores.txt -e "AY-Output" -ds
+geteerinf -p . -g FR_mated_scores.txt -i FR_non_mated_scores.txt -e "FR-Output" -ds
+```
+
+`pyeer` gives you the threshold scores which can be found at [1.pyeer_report.csv](Metrics/FR-Output/pyeer_report.csv) and at [2.pyeer_report.csv](Metrics/AY-Output/pyeer_report.csv) 
+The columns of the files were formatted for better readability.
+
+To calculate MMPMR, RMMR... scores, provide the files and threshold (can be found in [`FRS_info.json`](Metrics/FRS_info.json): 
+
+```bash
+# For FRS_1 = ArcFace+yunet
+python src/main.py -g Metrics/AY_mated_scores.txt -n Metrics/AY_non_mated_scores.txt -t 0.542889 -m mr
+
+# FOR FRS_2 = Facenet512+retinaface
+python src/main.py -g Metrics/FR_mated_scores.txt -n Metrics/FR_non_mated_scores.txt -t 0.333671 -m mr
 ```

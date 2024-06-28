@@ -28,7 +28,6 @@ def save_embeddings(
         detector (str): The backend used for detection
         output_file (Path): The output file to save the embeddings
     """
-    # We use deepface to calculate the embeddings
     embeddings = DeepFace.represent(
         img_path=str(image_path),
         model_name=model,
