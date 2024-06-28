@@ -58,9 +58,7 @@ We calculate MMPMR, RMMR scores to compare with the MAP metric.
 ## How to run
 
 The instructions are provided for experiment reproducability.
-
 The Input files are not provided for privacy reasons.
-
 The root `Input` folder structure should look like this:
 
 ```bash
@@ -75,7 +73,7 @@ Input
 ```
 
 Create a python environment using `miniconda` or your python environment manager of your choice.
-Install requirements (if you have pip):
+Install requirements using pip or any python package manager:
 
 ```bash
 pip install -r requirements.txt
@@ -102,15 +100,15 @@ cat FRGC_ArcFace+yunet_non_mated_scores.txt | awk '{print $3}' > AY_non_mated_sc
 cat FRGC_Facenet512+retinaface_non_mated_scores.txt | awk '{print $3}' > FR_non_mated_scores.txt
 ```
 
-Then, run pyeer!  Do not forget `-ds` for dissimilarity scores. Pyeer can run at the original files as well, as it only considers the last column for scores.
+Then, run [pyeer](https://github.com/manuelaguadomtz/pyeer)!  Do not forget `-ds` for dissimilarity scores. Pyeer can run at the original files as well, as it only considers the last column for scores.
 
 ```bash
 geteerinf -p . -g AY_mated_scores.txt -i AY_non_mated_scores.txt -e "AY-Output" -ds
 geteerinf -p . -g FR_mated_scores.txt -i FR_non_mated_scores.txt -e "FR-Output" -ds
 ```
 
-`pyeer` gives you the threshold scores which can be found at [1.pyeer_report.csv](Metrics/FR-Output/pyeer_report.csv) and at [2.pyeer_report.csv](Metrics/AY-Output/pyeer_report.csv) 
-The columns of the files were formatted for better readability.
+`pyeer` computes for you the threshold values (see `FMR1000_TH`) which can be found at [1.pyeer_report.csv](Metrics/FR-Output/pyeer_report.csv) and at [2.pyeer_report.csv](Metrics/AY-Output/pyeer_report.csv) 
+The columns of the report files were formatted for better readability.
 
 To calculate MMPMR, RMMR... scores, provide the files and threshold (can be found in [`FRS_info.json`](Metrics/FRS_info.json): 
 
