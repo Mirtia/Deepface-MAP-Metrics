@@ -98,6 +98,15 @@ cat FRGC_ArcFace+yunet_mated_scores.txt | awk '{print $2}' > AY_mated_scores.txt
 cat FRGC_Facenet512+retinaface_mated_scores.txt | awk '{print $2}' > FR_mated_scores.txt
 cat FRGC_ArcFace+yunet_non_mated_scores.txt | awk '{print $3}' > AY_non_mated_scores.txt
 cat FRGC_Facenet512+retinaface_non_mated_scores.txt | awk '{print $3}' > FR_non_mated_scores.txt
+
+# For other FRSs
+cat FRGC_Facenet+yunet_mated_scores.txt | awk '{print $2}' > FY_mated_scores.txt
+cat FRGC_VGG-Face+yunet_mated_scores.txt | awk '{print $2}' > VGG_mated_scores.txt
+cat FRGC_Facenet+yunet_non_mated_scores.txt | awk '{print $3}' > FY_non_mated_scores.txt
+cat FRGC_VGG-Face+yunet_non_mated_scores.txt | awk '{print $3}' > VGG_non_mated_scores.txt
+
+cat FRGC_VGG-Face+mtcnn_mated_scores.txt | awk '{print $2}' > VGGm_mated_scores.txt
+cat FRGC_VGG-Face+mtcnn_non_mated_scores.txt | awk '{print $3}' > VGGm_non_mated_scores.txt
 ```
 
 Then, run [pyeer](https://github.com/manuelaguadomtz/pyeer)!  Do not forget `-ds` for dissimilarity scores. Pyeer can run at the original files as well, as it only considers the last column for scores.
@@ -105,6 +114,9 @@ Then, run [pyeer](https://github.com/manuelaguadomtz/pyeer)!  Do not forget `-ds
 ```bash
 geteerinf -p . -g AY_mated_scores.txt -i AY_non_mated_scores.txt -e "AY-Output" -ds
 geteerinf -p . -g FR_mated_scores.txt -i FR_non_mated_scores.txt -e "FR-Output" -ds
+
+geteerinf -p . -g FY_mated_scores.txt -i FY_non_mated_scores.txt -e "FY-Output" -ds
+geteerinf -p . -g VGG_mated_scores.txt -i VGG_non_mated_scores.txt -e "VGG-Output" -ds
 ```
 
 `pyeer` computes for you the threshold values (see `FMR1000_TH`) which can be found at [1.pyeer_report.csv](Metrics/FR-Output/pyeer_report.csv) and at [2.pyeer_report.csv](Metrics/AY-Output/pyeer_report.csv) 

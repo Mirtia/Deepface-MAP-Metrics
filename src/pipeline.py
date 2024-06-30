@@ -15,8 +15,12 @@ from tqdm import tqdm
 class DeepFacePipeline:
     # The models and detectors chosen with this guideline https://github.com/serengil/deepface/tree/master/benchmarks
     DETECTORS: Dict[str, str] = {
-        "ArcFace+yunet": ("ArcFace", "yunet"),
+        "ArcFace+yunet": ("ArcFace", "yuFanet"),
         "Facenet512+retinaface": ("Facenet512", "retinaface"),
+        "VGG-Face+yunet": ("VGG-Face", "yunet"),
+        "Facenet+yunet": ("Facenet", "yunet"),
+        "VGG-Face+mtcnn": ("VGG-Face", "mtcnn"),
+
     }
     # Minimum number of probe images per unique subject
     MIN_COUNT = 3
@@ -472,8 +476,8 @@ class DeepFacePipeline:
             analysis_frgc: AnalysisResult = self.analyze("FRGC")
             if analysis_frgc and analysis_frgc.filtered_out_percentage < 0.6:
                 self.calculate_dissimilarity_scores("FRGC")
-                # self.calculate_mated_scores("FRGC")
-                # self.calculate_non_mated_scores("FRGC")
+                self.calculate_mated_scores("FRGC")
+                self.calculate_non_mated_scores("FRGC")
         # FERET is not suited in our case since our analysis showed that there are not
         # enough probe images to calculate the MAP metric
         # Easily expand in case of more databases

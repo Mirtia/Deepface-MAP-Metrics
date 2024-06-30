@@ -6,5 +6,13 @@
   "Facenet512+retinaface": [
     0.333671,
     false
+  ],
+  "VGG-Face+yunet": [
+    0.533727,
+    false
+  ],
+  "Facenet+yunet": [
+    0.268578,
+    false
   ]
 }
