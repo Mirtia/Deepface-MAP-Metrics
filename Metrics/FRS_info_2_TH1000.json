@@ -1,0 +1,10 @@
+{
+  "ArcFace+yunet": [
+    0.542889,
+    false
+  ],
+  "Facenet512+retinaface": [
+    0.333671,
+    false
+  ]
+}
