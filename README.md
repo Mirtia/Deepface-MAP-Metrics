@@ -131,3 +131,5 @@ python src/main.py -g Metrics/AY_mated_scores.txt -n Metrics/AY_non_mated_scores
 # FOR FRS_2 = Facenet512+retinaface
 python src/main.py -g Metrics/FR_mated_scores.txt -n Metrics/FR_non_mated_scores.txt -t 0.333671 -m mr
 ```
+
+To plot the Negative and Positive Rates and generate the confusion matrices, the DET Scripts provided by the course intstructor were used.
