@@ -57,6 +57,11 @@ We calculate MMPMR, RMMR scores to compare with the MAP metric.
 
 ## How to run
 
+First clone the repository
+```bash
+git clone --recurse-submodules https://github.com/Mirtia/Deepface-MAP-Metrics.git
+```
+
 The instructions are provided for experiment reproducability.
 The Input files are not provided for privacy reasons.
 The root `Input` folder structure should look like this:
